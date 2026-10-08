@@ -105,6 +105,39 @@ Verify the installation:
 ollama --version
 ```
 
+Check the available models:
+
+```bash
+ollama list
+```
+
+The Ollama model configuration used by the project is defined in:
+
+```text
+model/ollama_extractor.py
+```
+
+Make sure the required model is available before running prediction or starting the API.
+```
+
+The Ollama model configuration used by the project is defined in:
+
+```text
+model/ollama_extractor.py
+```
+
+Make sure the required model is available before running prediction or starting the API.
+```
+
+The Ollama model configuration used by the project is defined in:
+
+```text
+model/ollama_extractor.py
+```
+
+Make sure the required model is available before running prediction or starting the API.
+```
+
 Check the locally available models:
 
 ```bash
