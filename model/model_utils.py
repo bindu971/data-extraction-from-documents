@@ -2,7 +2,10 @@ from pathlib import Path
 import json
 
 
-def load_field_config(path="configs/extraction_fields.json"):
+CONFIG_PATH = Path(__file__).resolve().parent.parent / "configs" / "extraction_fields.json"
+
+
+def load_field_config(path=CONFIG_PATH):
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     return data["fields"]
 

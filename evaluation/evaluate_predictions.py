@@ -11,7 +11,9 @@ def main():
     if not prediction_file.exists():
         raise FileNotFoundError("Run python predict_documents.py first.")
 
-    df = pd.read_csv(prediction_file).fillna("")
+    # Read every value as text so numbers such as "60" are not
+    # converted to floats ("60.0") when a column has empty cells.
+    df = pd.read_csv(prediction_file, dtype=str, keep_default_na=False)
     config = load_field_config()
 
     fields = [item["output_name"] for item in config]

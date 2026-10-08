@@ -75,7 +75,8 @@ def main():
     if not docs_dir.exists():
         raise FileNotFoundError(docs_dir)
 
-    df = pd.read_csv(csv_path).fillna("")
+    # Keep ground-truth values exactly as written in the CSV.
+    df = pd.read_csv(csv_path, dtype=str, keep_default_na=False)
     file_col = locate_column(df)
 
     predictor = MetadataPredictor()
@@ -88,17 +89,18 @@ def main():
 
         path = resolve_document(docs_dir, filename)
 
+        # A document that cannot be processed is still written with
+        # empty predictions, so it counts as False in the evaluation.
+        predicted_labels = {}
+
         if path is None:
-            print(f"Skipping missing document: {filename}")
-            continue
-
-        try:
-            text = clean_text(load_document(path))
-        except Exception as exc:
-            print(f"Failed to read {filename}: {exc}")
-            continue
-
-        predicted_labels = predictor.predict_text(text)
+            print(f"Missing document: {filename}")
+        else:
+            try:
+                text = clean_text(load_document(path))
+                predicted_labels = predictor.predict_text(text)
+            except Exception as exc:
+                print(f"Failed to process {filename}: {exc}")
 
         output = {"file": filename}
 

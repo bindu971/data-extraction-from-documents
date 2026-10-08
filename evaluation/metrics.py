@@ -2,9 +2,11 @@ from collections import defaultdict
 
 
 def normalize_for_compare(value):
+    # Only whitespace is normalised (stray spaces in the CSV labels).
+    # Case, punctuation and characters must match exactly.
     if value is None:
         return ""
-    return " ".join(str(value).casefold().split()).strip()
+    return " ".join(str(value).split())
 
 
 def exact_match(expected, predicted):

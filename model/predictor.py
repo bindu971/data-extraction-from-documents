@@ -1,11 +1,8 @@
-from pathlib import Path
-
 from model.ollama_extractor import OllamaExtractor
 
 
 class MetadataPredictor:
-    def __init__(self, model_dir="artifacts/ner_model"):
-        self.model_dir = Path(model_dir)
+    def __init__(self):
         self.extractor = OllamaExtractor()
 
     def predict_text(self, text: str) -> dict:

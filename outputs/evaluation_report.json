@@ -24,20 +24,20 @@
     "f1": 0.6666666666666666
   },
   "Renewal Notice (Days)": {
-    "true_exact_matches": 0,
-    "false_predictions": 3,
-    "misses": 4,
-    "precision": 0.0,
-    "recall": 0.0,
-    "f1": 0.0
+    "true_exact_matches": 3,
+    "false_predictions": 0,
+    "misses": 1,
+    "precision": 1.0,
+    "recall": 0.75,
+    "f1": 0.8571428571428571
   },
   "Party One": {
-    "true_exact_matches": 3,
-    "false_predictions": 1,
-    "misses": 1,
-    "precision": 0.75,
-    "recall": 0.75,
-    "f1": 0.75
+    "true_exact_matches": 2,
+    "false_predictions": 2,
+    "misses": 2,
+    "precision": 0.5,
+    "recall": 0.5,
+    "f1": 0.5
   },
   "Party Two": {
     "true_exact_matches": 1,

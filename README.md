@@ -1,32 +1,33 @@
 # AI/ML Document Metadata Extraction
 
-An AI/ML-based system that extracts the required metadata fields from rental agreement documents in `.docx` and image formats.
+Extracts six metadata fields from rental agreements in `.docx` or scanned image (`.png`, `.jpg`, `.jpeg`) format, regardless of the document's template or layout.
 
 ## Fields Extracted
 
-- Agreement Value
-- Agreement Start Date
-- Agreement End Date
-- Renewal Notice (Days)
-- Party One
-- Party Two
+1. Agreement Value
+2. Agreement Start Date
+3. Agreement End Date
+4. Renewal Notice (Days)
+5. Party One
+6. Party Two
 
-## How It Works
+## Solution Approach
 
-The project processes a document through the following steps:
+```text
+DOCX     → document loader (python-docx) → text cleaning → Ollama extraction → six fields (JSON)
+PNG/JPG  → Tesseract OCR                 → text cleaning → Ollama extraction → six fields (JSON)
+```
 
-1. Read the input DOCX or image.
-2. Extract text from DOCX files or use OCR for images.
-3. Prepare labeled training data from the provided metadata.
-4. Create training examples by matching metadata values with document text.
-5. Use an AI/ML model to extract the required fields.
-6. Validate the extracted values.
-7. Compare predictions with the test dataset using exact-match evaluation.
-8. Provide the extraction functionality through a FastAPI endpoint.
+1. **Document loading** – `.docx` files are read with python-docx (paragraphs and table rows). Scanned images are converted to text with Tesseract OCR.
+2. **Text cleaning** – Unicode normalisation (NFKC), removal of control characters and collapsing of whitespace.
+3. **Extraction** – The cleaned text of the whole document is sent to a locally hosted LLM (**`qwen3.5:4b`** via Ollama, temperature 0). The prompt asks for exactly the six fields as one JSON object, with output-format instructions (e.g. dates as `DD.MM.YYYY`, value as a plain number, names without honorifics).
+4. **Evaluation** – Each predicted field is compared with the ground truth in `test.csv` using exact-match, and per-field Recall is reported.
 
-The prediction stage uses a locally hosted Ollama language model and returns the extracted fields as structured JSON.
+The extracted values are produced entirely by the language model from the document content. No regular expressions, fixed positions, static conditions or document-specific templates are used to determine field values.
 
-No regular expressions or document-specific templates are used to determine the extracted values.
+### About the spaCy/NER training pipeline
+
+`train_pipeline.py` converts the training documents into labelled examples (metadata values are located in the text with fuzzy matching) and trains a spaCy NER model in `artifacts/ner_model/`. This was an earlier experiment; with only 10 training documents it was not reliable, so **the trained NER model is not used for final inference**. Prediction and the API use Ollama only. Running the training pipeline is not required to reproduce the predictions.
 
 ## Project Structure
 
@@ -34,251 +35,168 @@ No regular expressions or document-specific templates are used to determine the 
 data-extraction-from-documents/
 ├── assignment-1/
 │   ├── data/
-│   │   ├── train/
-│   │   ├── test/
+│   │   ├── train/            # training documents
+│   │   ├── test/             # test documents
 │   │   ├── train.csv
 │   │   └── test.csv
 │   └── assignment-details.pdf
-├── artifacts/
 ├── configs/
-├── evaluation/
-├── model/
-├── outputs/
+│   └── extraction_fields.json   # the six fields and CSV column names
 ├── pipeline/
+│   ├── document_loader.py    # DOCX reading / dispatch to OCR
+│   ├── image_reader.py       # Tesseract OCR
+│   ├── text_cleaner.py       # text normalisation
+│   ├── annotation_builder.py # (training only) label spans for NER
+│   └── dataset_writer.py     # (training only) spaCy dataset files
+├── model/
+│   ├── ollama_extractor.py   # LLM prompt + Ollama call (final inference)
+│   ├── predictor.py          # predictor used by the script and the API
+│   ├── ner_trainer.py        # (training only) spaCy NER experiment
+│   └── model_utils.py
+├── evaluation/
+│   ├── metrics.py            # exact-match, per-field Recall / Precision / F1
+│   └── evaluate_predictions.py
 ├── service/
+│   └── api.py                # FastAPI service
 ├── tests/
+├── artifacts/                # prepared training/test examples
+├── outputs/                  # predictions.csv, evaluation_report.json
 ├── predict_documents.py
 ├── train_pipeline.py
-├── requirements.txt
-└── README.md
+├── inspect_dataset.py        # prints the CSV columns and row counts
+└── requirements.txt
 ```
-
-## Requirements
-
-- Python 3.12
-- Ollama
-- Tesseract OCR for image input
-- macOS/Linux/Windows environment capable of running the required Python packages
 
 ## Setup
 
-Create and activate the Python virtual environment:
+All commands are run from the repository root.
+
+### 1. Python environment
+
+Requires Python 3.12.
 
 ```bash
 python3.12 -m venv .venv
-source .venv/bin/activate
-```
-
-Install the Python dependencies:
-
-```bash
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-python -m spacy download en_core_web_sm
 ```
 
-### Tesseract OCR
-
-Tesseract is required when processing scanned image documents.
-
-On macOS:
+### 2. Tesseract OCR (for image documents)
 
 ```bash
+# macOS
 brew install tesseract
+
+# Ubuntu/Debian
+sudo apt-get install tesseract-ocr
 ```
 
-Verify the installation:
+On Windows, install it from https://github.com/UB-Mannheim/tesseract/wiki and add it to `PATH`.
+
+Verify:
 
 ```bash
 tesseract --version
 ```
 
-## Ollama Setup
+### 3. Ollama and the model
 
-The prediction and API stages use a locally hosted Ollama language model.
-
-Install Ollama and make sure the Ollama service is running.
-
-Verify the installation:
+Install Ollama from https://ollama.com/download (macOS: `brew install ollama`), then start the server and download the model:
 
 ```bash
-ollama --version
+ollama serve                 # skip if the Ollama desktop app is already running
+ollama pull qwen3.5:4b
+ollama list                  # qwen3.5:4b should be listed
 ```
 
-Check the available models:
+The model and server address can be changed with environment variables (defaults shown; see `.env.example`):
 
 ```bash
-ollama list
+export OLLAMA_MODEL=qwen3.5:4b
+export OLLAMA_HOST=http://localhost:11434
 ```
 
-The Ollama model configuration used by the project is defined in:
-
-```text
-model/ollama_extractor.py
-```
-
-Make sure the required model is available before running prediction or starting the API.
-```
-
-The Ollama model configuration used by the project is defined in:
-
-```text
-model/ollama_extractor.py
-```
-
-Make sure the required model is available before running prediction or starting the API.
-```
-
-The Ollama model configuration used by the project is defined in:
-
-```text
-model/ollama_extractor.py
-```
-
-Make sure the required model is available before running prediction or starting the API.
-```
-
-Check the locally available models:
-
-```bash
-ollama list
-```
-
-The model configuration used by the project is defined in:
-
-```text
-model/ollama_extractor.py
-```
-
-The Ollama model must be available before running prediction or the API.
+The results below were produced with `qwen3.5:4b` on Ollama 0.40.0.
 
 ## Dataset
 
-Training documents are stored in:
-
 ```text
-assignment-1/data/train/
+assignment-1/data/train/    assignment-1/data/train.csv    (10 documents)
+assignment-1/data/test/     assignment-1/data/test.csv     (4 documents)
 ```
 
-Test documents are stored in:
-
-```text
-assignment-1/data/test/
-```
-
-The corresponding metadata files are:
-
-```text
-assignment-1/data/train.csv
-assignment-1/data/test.csv
-```
-
-The dataset contains the six target fields required by the assignment.
-
-## Training
-
-Run the training pipeline with:
-
-```bash
-python train_pipeline.py
-```
-
-The pipeline prepares the training examples and generates artifacts under:
-
-```text
-artifacts/
-```
-
-Generated artifacts can include:
-
-```text
-artifacts/train_examples.json
-artifacts/test_examples.json
-artifacts/train.spacy
-artifacts/test.spacy
-artifacts/ner_model/
-```
+The test documents and `test.csv` are used for prediction and evaluation.
 
 ## Prediction
 
-Make sure Ollama is running before starting prediction.
-
-Run:
+Make sure Ollama is running, then:
 
 ```bash
 python predict_documents.py
 ```
 
-The predictions are saved to:
-
-```text
-outputs/predictions.csv
-```
-
-The prediction file contains the expected and predicted values for the six required fields.
+This reads every document listed in `test.csv`, extracts the six fields and writes `outputs/predictions.csv` with an `_expected` and `_predicted` column for each field. A document that cannot be read or processed is still written with empty predictions, so it counts as a miss.
 
 ## Evaluation
-
-Run:
 
 ```bash
 python -m evaluation.evaluate_predictions
 ```
 
-The evaluation calculates per-field:
+For each field separately:
 
-- Precision
-- Recall
-- F1 score
+- **True** = the predicted value exactly matches the expected value.
+- **False** = the value does not match, or was not extracted.
+- **Recall = True / (True + False)**, computed over test rows with a non-empty expected value.
 
-The main metric specified by the assignment is **per-field exact-match recall**.
+The only normalisation before comparison is whitespace: leading/trailing spaces are removed and repeated spaces are collapsed (several labels in the CSV contain stray spaces, e.g. `"Hanumaiah "`). Case, punctuation and characters must match exactly. Precision and F1 are also reported; Recall is the primary metric.
 
-Exact-match recall is calculated using the number of correct predictions compared with the number of non-empty ground-truth values.
+The report is written to `outputs/evaluation_report.json`.
 
-The evaluation report is saved to:
+## Results
 
-```text
-outputs/evaluation_report.json
-```
+Per-field exact-match Recall on the 4 provided test documents (`outputs/evaluation_report.json`):
 
-## API
+| Field | Correct | Recall |
+|---|---|---|
+| Agreement Value | 4 / 4 | 1.00 |
+| Agreement Start Date | 4 / 4 | 1.00 |
+| Agreement End Date | 2 / 4 | 0.50 |
+| Renewal Notice (Days) | 3 / 4 | 0.75 |
+| Party One | 2 / 4 | 0.50 |
+| Party Two | 1 / 4 | 0.25 |
 
-The project also provides a FastAPI service for document extraction.
+Main errors: two end dates were not extracted, one renewal notice was not extracted, and several party names differ from the label in honorifics, letter case or punctuation (e.g. `Mrs. S.Sakunthala` vs `S.Sakunthala`, `Kapil Mehrotra` vs `KAPIL MEHROTRA`, `B.Kishore` vs `.B.Kishore`), which count as misses under exact match.
 
-Start the API with:
+## REST API
+
+Start the FastAPI service (Ollama must be running):
 
 ```bash
 uvicorn service.api:app --reload
 ```
 
-Open the Swagger UI:
+Interactive Swagger documentation: http://127.0.0.1:8000/docs
 
-```text
-http://127.0.0.1:8000/docs
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | Service status |
+| GET | `/fields` | The six fields extracted |
+| POST | `/extract` | Upload a `.docx`, `.png`, `.jpg` or `.jpeg` file and get the six fields |
+
+The API uses the same loading, OCR, cleaning and Ollama extraction as `predict_documents.py`.
+
+Example:
+
+```bash
+curl -X POST http://127.0.0.1:8000/extract \
+  -F "file=@assignment-1/data/test/24158401-Rental-Agreement.png"
 ```
-
-The API provides:
-
-```text
-GET  /health
-GET  /fields
-POST /extract
-```
-
-The `/extract` endpoint accepts:
-
-- `.docx`
-- `.png`
-- `.jpg`
-- `.jpeg`
-
-The response contains the six extracted metadata fields as structured JSON.
-
-Example response:
 
 ```json
 {
-  "filename": "sample-agreement.docx",
+  "filename": "24158401-Rental-Agreement.png",
   "extracted_fields": {
     "Agreement Value": "12000",
     "Agreement Start Date": "01.04.2008",
@@ -290,50 +208,27 @@ Example response:
 }
 ```
 
-## Technologies Used
+## Tests
 
-- Python
-- Ollama
-- spaCy
-- PyTorch
-- Pandas
-- FastAPI
-- Tesseract OCR
-- scikit-learn
-
-## Assignment
-
-This project was developed as a solution for the **Meta Data Extraction from Documents** AI/ML assignment.
-
-The assignment requires extracting:
-
-- Agreement Value
-- Agreement Start Date
-- Agreement End Date
-- Renewal Notice (Days)
-- Party One
-- Party Two
-
-from documents with different layouts.
-
-The system is designed to extract these fields based on the document content rather than depending on one fixed document template or regular-expression-based extraction.
-
-## Project Outputs
-
-After running the pipeline, the main outputs are:
-
-```text
-outputs/
-├── predictions.csv
-└── evaluation_report.json
+```bash
+python -m pytest
 ```
 
-These files contain the model predictions and evaluation results for the test documents.
+## Optional: training pipeline
 
-## Notes
+```bash
+python -m spacy download en_core_web_sm
+python train_pipeline.py
+```
 
-- OCR is used for scanned image documents.
-- DOCX documents are processed directly for text extraction.
-- Ollama is used for the current prediction stage.
-- The extraction stage does not use regular expressions to determine field values.
-- The project separates document loading, preprocessing, model prediction, evaluation, and API functionality into different modules.
+Writes `artifacts/train_examples.json`, `artifacts/test_examples.json`, the spaCy `.spacy` files and `artifacts/ner_model/`. As noted above, this model is not used by prediction or the API.
+
+## Technologies Used
+
+- Python 3.12
+- Ollama (`qwen3.5:4b`) – final extraction
+- Tesseract OCR (pytesseract, Pillow) – scanned images
+- python-docx – DOCX reading
+- pandas – CSV handling and outputs
+- FastAPI / Uvicorn – REST API
+- spaCy, RapidFuzz – optional NER training experiment only
