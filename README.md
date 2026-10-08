@@ -1,9 +1,8 @@
-# Contract Field Extractor
+# AI/ML Document Metadata Extraction
 
-An independent AI/ML document metadata extraction pipeline for `.docx`, `.png`,
-and `.jpg` documents.
+An AI/ML-based system that extracts important metadata from rental agreement documents in `.docx` and image formats.
 
-## Target fields
+## Fields Extracted
 
 - Agreement Value
 - Agreement Start Date
@@ -12,155 +11,163 @@ and `.jpg` documents.
 - Party One
 - Party Two
 
-## Design
+## How It Works
 
-The pipeline is deliberately modular:
+The project processes a document through the following steps:
 
-1. Read documents and ground-truth CSV files.
-2. Extract text from DOCX or OCR-supported images.
-3. Prepare training examples from labeled metadata.
-4. Align labeled values to text using fuzzy character-span matching.
-5. Use an AI/ML extraction model to predict fields from unseen documents.
-6. Validate and evaluate the extracted fields.
-7. Evaluate exact-match recall and additional precision/F1 statistics.
-8. Expose extraction through FastAPI.
+1. Read the input DOCX or image.
+2. Extract text from DOCX files or use OCR for images.
+3. Prepare labeled training data from the provided metadata.
+4. Create training examples by matching metadata values with document text.
+5. Use an AI/ML model to extract the required fields.
+6. Validate the extracted values.
+7. Compare predictions with the test dataset using exact-match evaluation.
+8. Provide the extraction functionality through a FastAPI endpoint.
 
-The extraction model does not use regular expressions or document-specific
-templates to decide the answer. The current prediction stage uses a local
-Ollama-hosted language model and structured JSON output.
+The prediction stage uses a locally hosted Ollama language model and returns the extracted fields as structured JSON.
 
-## Project layout
+No regular expressions or document-specific templates are used to determine the extracted values.
+
+## Project Structure
 
 ```text
-contract_field_extractor/
-├── dataset/
-│   ├── training_docs/
-│   ├── evaluation_docs/
-│   ├── train.csv
-│   └── test.csv
+data-extraction-from-documents/
+├── assignment-1/
+│   ├── data/
+│   │   ├── train/
+│   │   ├── test/
+│   │   ├── train.csv
+│   │   └── test.csv
+│   └── assignment-details.pdf
 ├── artifacts/
 ├── configs/
-│   └── extraction_fields.json
-├── pipeline/
-│   ├── document_loader.py
-│   ├── image_reader.py
-│   ├── text_cleaner.py
-│   ├── annotation_builder.py
-│   └── dataset_writer.py
-├── model/
-│   ├── ner_trainer.py
-│   ├── predictor.py
-│   └── model_utils.py
 ├── evaluation/
-│   ├── metrics.py
-│   └── evaluate_predictions.py
-├── service/
-│   └── api.py
-├── tests/
+├── model/
 ├── outputs/
-├── train_pipeline.py
+├── pipeline/
+├── service/
+├── tests/
 ├── predict_documents.py
+├── train_pipeline.py
 ├── requirements.txt
-└── .env.example
+└── README.md
 ```
 
 ## Setup
 
+Create and activate the Python environment:
+
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
+```
+
+Install the dependencies:
+
+```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
 
-Tesseract is required only for image input.
-
-macOS:
+For image input, install Tesseract OCR on macOS:
 
 ```bash
 brew install tesseract
 ```
 
-## Dataset placement
+## Dataset
 
-Put training documents in:
+Training documents:
 
 ```text
 assignment-1/data/train/
 ```
 
-Put test documents in:
+Test documents:
 
 ```text
 assignment-1/data/test/
 ```
 
-Place the corresponding metadata files at:
+Metadata files:
 
 ```text
 assignment-1/data/train.csv
 assignment-1/data/test.csv
 ```
 
-The loader accepts common filename columns such as `filename`, `file_name`,
-`document`, `document_name`, or `id`, and recognizes the six target fields
-including the common `Aggrement Value` typo.
+## Training
 
-## Train
+Run:
 
 ```bash
 python train_pipeline.py
 ```
 
-This creates:
+Training artifacts are generated under:
 
 ```text
-artifacts/train_examples.json
-artifacts/test_examples.json
-artifacts/train.spacy
-artifacts/test.spacy
-artifacts/ner_model/
+artifacts/
 ```
 
-## Predict
+## Prediction
+
+Run:
 
 ```bash
 python predict_documents.py
 ```
 
-Results are written to:
+Predictions are saved to:
 
 ```text
 outputs/predictions.csv
 ```
 
-## Evaluate
+## Evaluation
+
+Run:
 
 ```bash
 python -m evaluation.evaluate_predictions
 ```
 
-The main assignment metric is per-field exact-match recall:
+The main evaluation metric for the assignment is **per-field exact-match recall**.
 
-`correct exact matches / number of non-empty ground-truth values`
+Additional precision and F1 scores are also reported.
 
 ## API
+
+Start the FastAPI application:
 
 ```bash
 uvicorn service.api:app --reload
 ```
 
-Open:
+Open the Swagger UI:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-POST a document to `/extract`.
+Upload a `.docx`, `.png`, `.jpg`, or `.jpeg` document to the `/extract` endpoint.
 
-## Notes
+The API returns the six extracted metadata fields as JSON.
 
-This project is intentionally different from a simple copied notebook:
-configuration, document loading, annotation alignment, model training,
-prediction and evaluation are separate modules.
+## Technologies Used
+
+- Python
+- spaCy
+- Ollama
+- OCR / Tesseract
+- FastAPI
+- Pandas
+- PyTorch
+- scikit-learn
+
+## Assignment
+
+This project was developed as a solution for the **Meta Data Extraction from Documents** AI/ML assignment.
+
+The system is designed to handle documents with different layouts rather than depending on one fixed document template.
