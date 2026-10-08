@@ -1,0 +1,50 @@
+{
+  "fields": [
+    {
+      "label": "AGREEMENT_VALUE",
+      "output_name": "Agreement Value",
+      "aliases": [
+        "Agreement Value",
+        "Aggrement Value"
+      ]
+    },
+    {
+      "label": "AGREEMENT_START_DATE",
+      "output_name": "Agreement Start Date",
+      "aliases": [
+        "Agreement Start Date",
+        "Aggrement Start Date"
+      ]
+    },
+    {
+      "label": "AGREEMENT_END_DATE",
+      "output_name": "Agreement End Date",
+      "aliases": [
+        "Agreement End Date",
+        "Aggrement End Date"
+      ]
+    },
+    {
+      "label": "RENEWAL_NOTICE_DAYS",
+      "output_name": "Renewal Notice (Days)",
+      "aliases": [
+        "Renewal Notice (Days)",
+        "Renewal Notice Days"
+      ]
+    },
+    {
+      "label": "PARTY_ONE",
+      "output_name": "Party One",
+      "aliases": [
+        "Party One"
+      ]
+    },
+    {
+      "label": "PARTY_TWO",
+      "output_name": "Party Two",
+      "aliases": [
+        "Party Two"
+      ]
+    }
+  ]
+}
