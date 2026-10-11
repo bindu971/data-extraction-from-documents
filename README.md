@@ -1,6 +1,17 @@
 # AI/ML Document Metadata Extraction
 
-Extracts six metadata fields from rental agreements in `.docx` or scanned image (`.png`, `.jpg`, `.jpeg`) format, regardless of the document's template or layout.
+An AI-powered document extraction pipeline that extracts six metadata fields from rental agreements in DOCX and scanned image formats using a local LLM and OCR.
+
+**Key features**
+
+- Extracts six fields: Agreement Value, Start Date, End Date, Renewal Notice, Party One, and Party Two.
+- Uses Python, Tesseract OCR, and Ollama with a pretrained Qwen model.
+- Supports DOCX, PNG, JPG, and JPEG files.
+- Provides a FastAPI REST API for document uploads.
+- Evaluates predictions using exact-match Precision, Recall, and F1-score.
+- Includes automated tests for document loading, extraction logic, evaluation, and API endpoints.
+
+The pipeline is designed to handle varying document layouts without relying on document-specific templates or fixed field positions.
 
 ## Fields Extracted
 
@@ -21,7 +32,7 @@ PNG/JPG  → Tesseract OCR                 → text cleaning → Ollama extracti
 1. **Document loading** – `.docx` files are read with python-docx (paragraphs and table rows). Scanned images are converted to text with Tesseract OCR.
 2. **Text cleaning** – Unicode normalisation (NFKC), removal of control characters and collapsing of whitespace.
 3. **Extraction** – The cleaned text of the whole document is sent to a locally hosted LLM (**`qwen3.5:4b-q4_K_M`** via Ollama, temperature 0) in a single request:
-   - The prompt is built from `configs/extraction_fields.json`, which defines each field by its *meaning* (e.g. Party One = the owner/lessor, Renewal Notice = advance notice period in days with 1 month = 30 days, End Date = end of the lease term), plus general name rules (drop honorifics and "S/o …" clauses, keep the name exactly as written). The few name examples in the prompt are invented, not taken from the dataset.
+   - The prompt is built from `configs/extraction_fields.json`, which defines each field by its _meaning_ (e.g. Party One = the owner/lessor, Renewal Notice = advance notice period in days with 1 month = 30 days, End Date = end of the lease term), plus general name rules (drop honorifics and "S/o …" clauses, keep the name exactly as written). The few name examples in the prompt are invented, not taken from the dataset.
    - A **JSON schema** is passed to Ollama (`format`), so the model's output is always a JSON object with exactly the six keys.
    - The context window is set explicitly (`num_ctx` = 8192) so long documents are not silently truncated; an invalid or failed response is retried once.
 4. **Evaluation** – Each predicted field is compared with the ground truth using exact-match, and per-field Recall is reported.
@@ -171,15 +182,16 @@ The only normalisation before comparison is whitespace: leading/trailing spaces 
 ## Results
 
 Per-field exact-match Recall on the **4 provided test documents** (`outputs/evaluation_report.json`), produced by `python predict_documents.py` and `python -m evaluation.evaluate_predictions` with `qwen3.5:4b-q4_K_M`:
+**Evaluation limitation:** The test set contains only four documents. These results provide an initial assessment of the extraction pipeline and should not be interpreted as a guarantee of performance on unseen documents. Party-name variations and date calculations remain areas for improvement.
 
-| Field | Correct | Recall |
-|---|---|---|
-| Agreement Value | 4 / 4 | **1.00** |
-| Agreement Start Date | 4 / 4 | **1.00** |
-| Agreement End Date | 3 / 4 | **0.75** |
-| Renewal Notice (Days) | 4 / 4 | **1.00** |
-| Party One | 4 / 4 | **1.00** |
-| Party Two | 1 / 4 | **0.25** |
+| Field                 | Correct | Recall   |
+| --------------------- | ------- | -------- |
+| Agreement Value       | 4 / 4   | **1.00** |
+| Agreement Start Date  | 4 / 4   | **1.00** |
+| Agreement End Date    | 3 / 4   | **0.75** |
+| Renewal Notice (Days) | 4 / 4   | **1.00** |
+| Party One             | 4 / 4   | **1.00** |
+| Party Two             | 1 / 4   | **0.25** |
 
 Remaining test errors:
 
@@ -192,27 +204,27 @@ With temperature 0 the output is deterministic: a repeated run produced identica
 
 Each step was evaluated on both splits; the decision to keep a change was based on the train (development) split. Columns are test Recall per field.
 
-| Change | Value | Start | End | Notice | Party One | Party Two | Test mean | Train mean |
-|---|---|---|---|---|---|---|---|---|
-| Initial submission (MLX/NVFP4 build, original prompt) | 1.00 | 1.00 | 0.50 | 0.75 | 0.50 | 0.25 | **0.67** | – |
-| 1. Pinned `q4_K_M` build (same prompt) | 1.00 | 0.75 | 0.50 | 0.75 | 0.75 | 0.25 | **0.67** | 0.32 |
-| 2. JSON schema, `num_ctx`, retry, field definitions in config | 1.00 | 1.00 | 0.75 | 0.75 | 0.25 | 0.00 | **0.62** | 0.34 |
-| 3. Clearer name rules with invented examples (final) | 1.00 | 1.00 | 0.75 | 1.00 | 1.00 | 0.25 | **0.83** | 0.46 |
+| Change                                                        | Value | Start | End  | Notice | Party One | Party Two | Test mean | Train mean |
+| ------------------------------------------------------------- | ----- | ----- | ---- | ------ | --------- | --------- | --------- | ---------- |
+| Initial submission (MLX/NVFP4 build, original prompt)         | 1.00  | 1.00  | 0.50 | 0.75   | 0.50      | 0.25      | **0.67**  | –          |
+| 1. Pinned `q4_K_M` build (same prompt)                        | 1.00  | 0.75  | 0.50 | 0.75   | 0.75      | 0.25      | **0.67**  | 0.32       |
+| 2. JSON schema, `num_ctx`, retry, field definitions in config | 1.00  | 1.00  | 0.75 | 0.75   | 0.25      | 0.00      | **0.62**  | 0.34       |
+| 3. Clearer name rules with invented examples (final)          | 1.00  | 1.00  | 0.75 | 1.00   | 1.00      | 0.25      | **0.83**  | 0.46       |
 
 Tried and not kept: OCR image preprocessing (grayscale, 2× upscaling, auto-contrast, `--psm 6`) found no additional label values in the training images; Qwen's "thinking" mode took about 14 minutes for one document on the test machine and returned no answer.
 
 ### Development (train) split
 
-`outputs/evaluation_report_train.json`. Lower than the test scores mainly because of the data issues listed under *Dataset* (one missing document, two swapped rows, invalid end-date labels) and the noisier OCR of some training documents.
+`outputs/evaluation_report_train.json`. Lower than the test scores mainly because of the data issues listed under _Dataset_ (one missing document, two swapped rows, invalid end-date labels) and the noisier OCR of some training documents.
 
-| Field | Correct | Recall |
-|---|---|---|
-| Agreement Value | 6 / 10 | 0.60 |
-| Agreement Start Date | 6 / 10 | 0.60 |
-| Agreement End Date | 3 / 10 | 0.30 |
-| Renewal Notice (Days) | 4 / 9 | 0.44 |
-| Party One | 3 / 10 | 0.30 |
-| Party Two | 5 / 10 | 0.50 |
+| Field                 | Correct | Recall |
+| --------------------- | ------- | ------ |
+| Agreement Value       | 6 / 10  | 0.60   |
+| Agreement Start Date  | 6 / 10  | 0.60   |
+| Agreement End Date    | 3 / 10  | 0.30   |
+| Renewal Notice (Days) | 4 / 9   | 0.44   |
+| Party One             | 3 / 10  | 0.30   |
+| Party Two             | 5 / 10  | 0.50   |
 
 ## REST API
 
@@ -224,11 +236,11 @@ uvicorn service.api:app --reload
 
 Interactive Swagger documentation: http://127.0.0.1:8000/docs
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/health` | Service status |
-| GET | `/fields` | The six fields extracted |
-| POST | `/extract` | Upload a `.docx`, `.png`, `.jpg` or `.jpeg` file and get the six fields |
+| Method | Endpoint   | Description                                                             |
+| ------ | ---------- | ----------------------------------------------------------------------- |
+| GET    | `/health`  | Service status                                                          |
+| GET    | `/fields`  | The six fields extracted                                                |
+| POST   | `/extract` | Upload a `.docx`, `.png`, `.jpg` or `.jpeg` file and get the six fields |
 
 The API uses the same loading, OCR, cleaning and Ollama extraction as `predict_documents.py`. Errors: `400` unsupported file type, `422` no text could be read, `502` the Ollama request failed (e.g. Ollama not running).
 
