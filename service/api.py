@@ -55,7 +55,20 @@ async def extract(file: UploadFile = File(...)):
 
     try:
         text = clean_text(load_document(temp_path))
-        labels = predictor().predict_text(text)
+
+        if not text:
+            raise HTTPException(
+                status_code=422,
+                detail="No text could be read from the document.",
+            )
+
+        try:
+            labels = predictor().predict_text(text)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Extraction with the Ollama model failed: {exc}",
+            )
 
         field_map = load_field_config()
         result = {

@@ -1,3 +1,4 @@
+import argparse
 import json
 from pathlib import Path
 import pandas as pd
@@ -7,9 +8,18 @@ from model.model_utils import load_field_config
 
 
 def main():
-    prediction_file = Path("outputs/predictions.csv")
+    parser = argparse.ArgumentParser(description="Per-field exact-match evaluation.")
+    parser.add_argument("--split", choices=["test", "train"], default="test")
+    split = parser.parse_args().split
+
+    suffix = "" if split == "test" else f"_{split}"
+    prediction_file = Path(f"outputs/predictions{suffix}.csv")
+    report_file = Path(f"outputs/evaluation_report{suffix}.json")
+
     if not prediction_file.exists():
-        raise FileNotFoundError("Run python predict_documents.py first.")
+        raise FileNotFoundError(
+            f"Run python predict_documents.py --split {split} first."
+        )
 
     # Read every value as text so numbers such as "60" are not
     # converted to floats ("60.0") when a column has empty cells.
@@ -21,8 +31,8 @@ def main():
 
     report = field_metrics(rows, fields)
 
-    Path("outputs").mkdir(exist_ok=True)
-    Path("outputs/evaluation_report.json").write_text(
+    report_file.parent.mkdir(exist_ok=True)
+    report_file.write_text(
         json.dumps(report, indent=2),
         encoding="utf-8",
     )
@@ -37,7 +47,7 @@ def main():
             f"F1={values['f1']:.3f}"
         )
 
-    print("\nSaved: outputs/evaluation_report.json")
+    print(f"\nSaved: {report_file}")
 
 
 if __name__ == "__main__":

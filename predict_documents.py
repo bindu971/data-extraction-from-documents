@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 import pandas as pd
 
@@ -65,9 +66,26 @@ def resolve_document(docs_dir, filename):
     return None
 
 
+def output_file(split):
+    name = "predictions.csv" if split == "test" else f"predictions_{split}.csv"
+    return ROOT / "outputs" / name
+
+
 def main():
-    csv_path = DATASET / "test.csv"
-    docs_dir = DATASET / "test"
+    parser = argparse.ArgumentParser(
+        description="Extract the six fields for every document in a split."
+    )
+    parser.add_argument(
+        "--split",
+        choices=["test", "train"],
+        default="test",
+        help="test = final evaluation set (default); "
+             "train = development set for checking changes",
+    )
+    split = parser.parse_args().split
+
+    csv_path = DATASET / f"{split}.csv"
+    docs_dir = DATASET / split
 
     if not csv_path.exists():
         raise FileNotFoundError(csv_path)
@@ -133,19 +151,16 @@ def main():
 
         print(
             f"Predicted: {filename} | "
-            f"entities={len(predicted_labels)}"
+            f"entities={len(predicted_labels)}",
+            flush=True,
         )
 
-    output_dir = ROOT / "outputs"
-    output_dir.mkdir(exist_ok=True)
-
-    pd.DataFrame(rows).to_csv(
-        output_dir / "predictions.csv",
-        index=False,
-    )
+    path = output_file(split)
+    path.parent.mkdir(exist_ok=True)
+    pd.DataFrame(rows).to_csv(path, index=False)
 
     print()
-    print("Saved outputs/predictions.csv")
+    print(f"Saved {path.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

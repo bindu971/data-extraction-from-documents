@@ -72,7 +72,7 @@ def process_split(
     config,
 ):
     """Convert a labeled CSV split into training examples."""
-    df = pd.read_csv(csv_path).fillna("")
+    df = pd.read_csv(csv_path, dtype=str, keep_default_na=False)
 
     file_col = filename_column(df)
 
