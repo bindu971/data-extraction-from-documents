@@ -1,0 +1,11 @@
+file,Agreement Value_expected,Agreement Value_predicted,Agreement Start Date_expected,Agreement Start Date_predicted,Agreement End Date_expected,Agreement End Date_predicted,Renewal Notice (Days)_expected,Renewal Notice (Days)_predicted,Party One_expected,Party One_predicted,Party Two_expected,Party Two_predicted
+6683127-House-Rental-Contract-GERALDINE-GALINATO-v2-Page-1,6500,6500,20.05.2007,20.05.2007,20.05.2008,20.05.2008,15,,"Antonio Levy S. Ingles, Jr. and/or Mary Rose C. Ingles",Antonio Levy S. Ingles Jr and/or Mary Rose C. Ingles,GERALDINE Q. GALINATO,Geraldine O. Galinato
+6683129-House-Rental-Contract-Geraldine-Galinato-v2,6500,6500,20.05.2007,20.05.2007,20.05.2008,20.05.2008,15,15,"Antonio Levy S. Ingles, Jr. and/or Mary Rose C. Ingles",Antonio Levy S. Ingles Jr and/or Mary Rose C. Ingles,GERALDINE Q. GALINATO,Geraldine O. Galinato
+18325926-Rental-Agreement-1,4000,4000,05.12.2008,05.12.2008,31.11.2009,03.11.2009,90,90,MR.K.Kuttan ,K.Kuttan,P.M. Narayana Namboodri ,P.M. Narayana Namboodri
+24158401-Rental-Agreement,12000,,01.04.2008,,31.03.2009,,60,,Hanumaiah ,, Vishal Bhardwaj ,
+36199312-Rental-Agreement,3800,3800,01.05.2010,01.05.2010,31.04.2011,31.03.2011,30,30,Balaji.R ,Balaji.R,Kartheek R,Kartheek R
+44737744-Maddireddy-Bhargava-Reddy-Rental-Agreement,3000,,20.09.2010,,19.07.2011,,,,M.V.V. VIJAYA SHANKAR,M. V. VI JAY A SHANKAR,MADDIREDDY BHARGAVA REDDY,MADDIREDDY BHARGAVA REDDY
+47854715-RENTAL-AGREEMENT,9000,9000,01.04.2010,01.04.2010,31.02.2011,30.02.2011,60,30, P C MATHEW,P C MATHEW, L GOPINATH ,L GOPINATH
+50070534-RENTAL-AGREEMENT,10000,10000,01.04.2010 ,01.04.2010,30.03.2011,30.03.2011,90,90, P. JohnsonRavikumar,P. JohnsonRavikumar,Saravanan BV ,Saravanan BV
+54770958-Rental-Agreement,8000,5500,01.04.2011,20.04.2011,31.03.2012,19.03.2012,90,60,K. Parthasarathy,Asha Ramesh & Ramesh.K.N,Veerabrahmam Bathini,Sadasivuni Deepti & Sadasivuni Kiran
+54945838-Rental-Agreement,5500,8000,21.04.2011,01.04.2011,19.02.2012,31.03.2012,60,90,Asha Ramesh & Ramesh K.N,Prof. K. Parthasarathy,Sadasivuni Deepthi & Sadasivuni Kiran,Veerabrahmam Bathini
