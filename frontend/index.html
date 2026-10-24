@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Document AI Extractor</title>
+  <meta name="description" content="Extract structured agreement information from documents using AI and OCR.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5'/%3E%3Cpath d='M9 13h6M9 17h4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+        </div>
+        <div>
+          <h1 class="brand-name">Document AI Extractor</h1>
+          <p class="brand-subtitle">AI-powered agreement metadata extraction</p>
+        </div>
+      </div>
+      <div id="health" class="status-pill" data-state="checking" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="health-text">Checking connection</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="intro">
+      <p class="intro-text">Extract structured agreement information from documents using AI and OCR.</p>
+      <ol class="pipeline" aria-label="Processing pipeline">
+        <li><span class="step-num">1</span>Upload a DOCX or scanned image</li>
+        <li><span class="step-num">2</span>Text is read with python-docx or Tesseract OCR</li>
+        <li><span class="step-num">3</span>A local LLM (Ollama) extracts the fields</li>
+      </ol>
+    </section>
+
+    <div class="layout">
+      <!-- Upload panel -->
+      <section class="card" aria-labelledby="upload-title">
+        <div class="card-header">
+          <h2 id="upload-title" class="card-title">Document</h2>
+          <p class="card-subtitle">Select one agreement to process</p>
+        </div>
+
+        <div class="card-body">
+          <input id="file-input" class="visually-hidden" type="file" aria-label="Choose a document" tabindex="-1">
+          <div id="dropzone" class="dropzone">
+            <div class="dropzone-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M20 16v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3"/></svg>
+            </div>
+            <p class="dropzone-title">Drag and drop a document here</p>
+            <p class="dropzone-hint">or</p>
+            <button id="browse-btn" type="button" class="btn btn-secondary">Browse files</button>
+            <p class="dropzone-formats">Supported: <span id="formats"></span></p>
+          </div>
+
+          <div id="file-card" class="file-card" hidden>
+            <div id="file-thumb" class="file-thumb" aria-hidden="true"></div>
+            <div class="file-meta">
+              <p id="file-name" class="file-name"></p>
+              <p id="file-details" class="file-details"></p>
+            </div>
+            <div class="file-actions">
+              <button id="replace-btn" type="button" class="btn btn-ghost btn-sm">Change</button>
+              <button id="remove-btn" type="button" class="icon-btn" aria-label="Remove selected file" title="Remove">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div id="message" class="alert" role="alert" hidden>
+            <span class="alert-icon" aria-hidden="true"></span>
+            <div>
+              <p id="message-title" class="alert-title"></p>
+              <p id="message-text" class="alert-text"></p>
+            </div>
+          </div>
+
+          <div id="progress" class="progress" hidden>
+            <span class="spinner" aria-hidden="true"></span>
+            <div class="progress-text">
+              <p class="progress-title">Extracting metadata… <span id="elapsed" class="elapsed">0:00</span></p>
+              <p class="progress-hint">Reading the document and running the AI model. This can take a minute or more, especially for scanned images.</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="extract-btn" type="button" class="btn btn-primary btn-block">
+              <span class="btn-spinner spinner" aria-hidden="true"></span>
+              <span id="extract-label">Extract Metadata</span>
+            </button>
+            <button id="cancel-btn" type="button" class="btn btn-ghost btn-block" hidden>Cancel</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results panel -->
+      <section class="card" aria-labelledby="results-title">
+        <div class="card-header card-header-row">
+          <div>
+            <h2 id="results-title" class="card-title">Extracted Metadata</h2>
+            <p id="results-subtitle" class="card-subtitle">Results appear here after extraction</p>
+          </div>
+          <div id="result-actions" class="result-actions" hidden>
+            <button id="copy-all-btn" type="button" class="btn btn-secondary btn-sm">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              Copy all
+            </button>
+            <button id="download-btn" type="button" class="btn btn-secondary btn-sm">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg>
+              JSON
+            </button>
+            <button id="new-btn" type="button" class="btn btn-ghost btn-sm">New extraction</button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div id="summary" class="summary" hidden></div>
+          <dl id="fields" class="fields"></dl>
+          <p id="fields-empty" class="empty-note" hidden>Field list unavailable. Results will be shown once the backend is reachable.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="container app-footer">
+    <span>FastAPI · python-docx · Tesseract OCR · Ollama</span>
+    <a href="/docs" target="_blank" rel="noopener">API documentation</a>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

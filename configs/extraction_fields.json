@@ -1,0 +1,56 @@
+{
+  "fields": [
+    {
+      "label": "AGREEMENT_VALUE",
+      "output_name": "Agreement Value",
+      "aliases": [
+        "Agreement Value",
+        "Aggrement Value"
+      ],
+      "description": "The monthly rent payable under the agreement. Digits only: no currency symbol, words, commas or decimals."
+    },
+    {
+      "label": "AGREEMENT_START_DATE",
+      "output_name": "Agreement Start Date",
+      "aliases": [
+        "Agreement Start Date",
+        "Aggrement Start Date"
+      ],
+      "description": "The date the rental/lease period begins, as DD.MM.YYYY. If the document says the period runs from the date of the agreement, use the date on which the agreement is made."
+    },
+    {
+      "label": "AGREEMENT_END_DATE",
+      "output_name": "Agreement End Date",
+      "aliases": [
+        "Agreement End Date",
+        "Aggrement End Date"
+      ],
+      "description": "The date the rental/lease period ends, as DD.MM.YYYY. If the document gives the start date and a duration (for example eleven months) instead of an end date, return the last day of that period: the start date plus the duration, minus one day."
+    },
+    {
+      "label": "RENEWAL_NOTICE_DAYS",
+      "output_name": "Renewal Notice (Days)",
+      "aliases": [
+        "Renewal Notice (Days)",
+        "Renewal Notice Days"
+      ],
+      "description": "The advance notice period a party must give to terminate, vacate or not renew the agreement, as a number of days. Convert months to days using 1 month = 30 days. Digits only. Do not confuse it with the lease duration or rent payment dates."
+    },
+    {
+      "label": "PARTY_ONE",
+      "output_name": "Party One",
+      "aliases": [
+        "Party One"
+      ],
+      "description": "The owner/lessor/landlord who lets the property. If there are several, include all of them as written in the document."
+    },
+    {
+      "label": "PARTY_TWO",
+      "output_name": "Party Two",
+      "aliases": [
+        "Party Two"
+      ],
+      "description": "The tenant/lessee who takes the property on rent. If there are several, include all of them as written in the document."
+    }
+  ]
+}

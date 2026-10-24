@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.DS_Store
+artifacts/*.spacy
+artifacts/ner_model/
+.pytest_cache/
+outputs/
+assignment-1/data/
